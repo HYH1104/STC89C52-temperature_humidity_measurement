@@ -1,0 +1,204 @@
+C51 COMPILER V9.57.0.0   MAIN                                                              03/17/2021 16:53:20 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\OBJ\main.obj
+COMPILER INVOKED BY: D:\Keil uvision5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\OBJ\mai
+                    -n.lst) TABS(2) OBJECT(.\OBJ\main.obj)
+
+line level    source
+
+   1          #include<reg52.h>
+   2          #include<intrins.h>
+   3           
+   4          typedef unsigned char uchar;
+   5          typedef unsigned int  uint;
+   6           
+   7           
+   8          #define DELAY_TIME 5
+   9           
+  10           
+  11          uchar value[5];
+  12          uint temp,hum; 
+  13           
+  14          sbit w1=P2^0;
+  15          sbit w2=P2^1;
+  16          sbit w3=P2^2;
+  17          sbit w4=P2^3;
+  18          sbit Bus=P2^4;
+  19          //P3温度，P1湿度
+  20           
+  21          void Delay10us(void);//10us延时函数
+  22          void Delay20us(void);//20us延时函数 
+  23          void Delay1ms(void);//1ms延时函数
+  24          void Read_value(void);//读值子函数
+  25          void Show(uint x,y);//显示子函数
+  26           
+  27           
+  28           
+  29          void main()
+  30          {
+  31   1        uint i;
+  32   1        for(i=0;i<2000;i++)
+  33   1        {
+  34   2          Delay1ms();
+  35   2        }
+  36   1       
+  37   1        Read_value();//读值 
+  38   1       
+  39   1        hum=value[0]*256+value[1];//计算湿度值
+  40   1        temp=(value[2]&0x7f)*256+value[3];//如果温度为负值,则&0x3f去掉符号位后再计算；若为正值则无影响
+  41   1       
+  42   1        Show(temp,hum); 
+  43   1      }
+  44           
+  45           
+  46           
+  47           
+  48           
+  49           
+  50          /***********************10us延时函数*****************************/
+  51          void Delay10us()
+  52          {
+  53   1        uchar i;
+  54   1        i=2;
+C51 COMPILER V9.57.0.0   MAIN                                                              03/17/2021 16:53:20 PAGE 2   
+
+  55   1        while(--i);
+  56   1              
+  57   1      }
+  58          /***********************20us延时函数*****************************/
+  59          void Delay20us(void)   //误差 0us
+  60          {
+  61   1          unsigned char a,b;
+  62   1          for(b=3;b>0;b--)
+  63   1              for(a=1;a>0;a--);
+  64   1      }
+  65           
+  66           
+  67           
+  68          /***********************1ms延时函数*****************************/
+  69          void Delay1ms()   //误差 0us
+  70          {
+  71   1          unsigned char a,b,c;
+  72   1          for(c=1;c>0;c--)
+  73   1              for(b=142;b>0;b--)
+  74   1                  for(a=2;a>0;a--);
+  75   1      }
+  76          /************************读值函数******************************/
+  77          void Read_value()
+  78          { 
+  79   1        uchar i,j=0,mask;
+  80   1        Bus=0;//主机拉低总线至少1ms(20ms)
+  81   1        for(i=0;i<20;i++)
+  82   1        {
+  83   2          Delay1ms();
+  84   2        }
+  85   1        Bus=1;//主机主动拉高20us
+  86   1        while(Bus);//等待从机拉低总线
+  87   1        while(!Bus);//度过从机拉低时间
+  88   1        while(Bus);//度过从机拉高时间
+  89   1        
+  90   1        while(j<5)
+  91   1        {
+  92   2          mask=0x80;
+  93   2          for(i=0;i<8;i++)
+  94   2          {
+  95   3            while(!Bus);//度过数据位的低电平
+  96   3            Delay20us();//延迟40us后进行电平检测
+  97   3            Delay20us();    
+  98   3            if(Bus==0)
+  99   3            {
+ 100   4              value[j]&=(~mask);
+ 101   4            }
+ 102   3            else
+ 103   3            {
+ 104   4              value[j]|=mask;
+ 105   4            }
+ 106   3            mask>>=1;
+ 107   3            while(Bus);//度过剩余高电平（如果是1的话）
+ 108   3          }
+ 109   2          j++;
+ 110   2        }
+ 111   1      }
+ 112           
+ 113           
+ 114           
+ 115          /**********************显示函数*************************************/
+ 116          void Show(uint x,y)
+C51 COMPILER V9.57.0.0   MAIN                                                              03/17/2021 16:53:20 PAGE 3   
+
+ 117          {
+ 118   1        char duan1[10]={0xc0,0xf9,0xa4,0xb0,0x99,0x92,0x82,0xf8,0x80,0x90};//段码
+ 119   1        char duan2[10]={0x40,0x79,0x24,0x30,0x19,0x12,0x02,0x78,0x00,0x10};
+ 120   1        while(1)
+ 121   1        {
+ 122   2          w1=1;//小数位
+ 123   2          w2=0;
+ 124   2          w3=0;
+ 125   2          w4=0;
+ 126   2          Delay10us();
+ 127   2          P3=duan1[x%10];
+ 128   2          P1=duan1[y%10];
+ 129   2          Delay1ms();
+ 130   2          P3=0xff;
+ 131   2          P1=0xff;
+ 132   2       
+ 133   2       
+ 134   2          w1=0;//个位
+ 135   2          w2=1;
+ 136   2          w3=0;
+ 137   2          w4=0;
+ 138   2          Delay10us();
+ 139   2          P3=duan2[(x/10)%10];
+ 140   2          P1=duan2[(y/10)%10];
+ 141   2          Delay1ms();
+ 142   2          P3=0xff;
+ 143   2          P1=0xff;
+ 144   2       
+ 145   2          w1=0;//十位
+ 146   2          w2=0;
+ 147   2          w3=1;
+ 148   2          w4=0;
+ 149   2          Delay10us();
+ 150   2          P3=duan1[(x/100)%10];
+ 151   2          P1=duan1[(y/100)%10];
+ 152   2          Delay1ms();
+ 153   2          P3=0xff;
+ 154   2          P1=0xff;
+ 155   2       
+ 156   2          w1=0;//百位
+ 157   2          w2=0;
+ 158   2          w3=0;
+ 159   2          w4=1;
+ 160   2          Delay10us();
+ 161   2          if(value[2]>127)//即温度最高位为1，表示负值
+ 162   2          {
+ 163   3            P3=0xbf;//显示负号
+ 164   3          }
+ 165   2          else
+ 166   2          {
+ 167   3            P3=duan1[(x/1000)%10];
+ 168   3          }
+ 169   2          P1=duan1[(y/1000)%10];
+ 170   2          Delay1ms();
+ 171   2          P3=0xff; 
+ 172   2          P1=0xff;
+ 173   2        }
+ 174   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    454    ----
+C51 COMPILER V9.57.0.0   MAIN                                                              03/17/2021 16:53:20 PAGE 4   
+
+   CONSTANT SIZE    =     20    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9      26
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,4 @@
+".\OBJ\STARTUP.obj",
+".\OBJ\main.obj" 
+TO ".\OBJ\温湿度测量" 
+PRINT(".\OBJ\温湿度测量.m51")
